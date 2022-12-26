@@ -1,0 +1,21 @@
+{
+  "name": "book-club-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "node": "^16.9.0",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "nodemon main.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.7.1",
+    "dotenv": "^16.0.3",
+    "moment": "^2.29.4",
+    "nodemon": "^2.0.20",
+    "text-case": "^1.0.9"
+  },
+  "devDependencies": {
+    "eslint": "^8.30.0"
+  }
+}
