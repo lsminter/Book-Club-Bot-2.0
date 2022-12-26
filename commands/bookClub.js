@@ -32,14 +32,14 @@ module.exports = {
 		const bookClub = book + ' Book Club ' + moment().format('MMMM Do YYYY')
 
 		const numOfPeople = interaction.options.getInteger('people')
-		const hours = interaction.options.getInteger('people')
-		const author = interaction.member.user.username
 
+		const hours = interaction.options.getInteger('people')
 		const waitTimeInSeconds = hours * 60 * 60 
 		const today = new Date()
 		const todayUNIX = Math.floor(today.getTime() / 1000)
-
 		const timeExpiresAt = todayUNIX + waitTimeInSeconds
+
+		const author = interaction.member.user.username
 
 		const wikiLink = titleCase(book).replace(/\s+/g, '_');
 
