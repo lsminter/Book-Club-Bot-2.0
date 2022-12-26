@@ -80,10 +80,9 @@ module.exports = {
 			]
 		})		
 
-		const bookClubRole = interaction.guild.roles.cache.find(r => r.name === bookClub)
-		const bookClubRoleId = bookClubRole.id
+		const bookClubRoleId = await interaction.guild.roles.cache.find(r => r.name === bookClub).id
 
-		await interaction.guild.channels.create({ 
+		await interaction.guild.channels.create({
 			name: `${bookClub}`,
 			type: ChannelType.GuildText,
 			permissionOverwrites: [
@@ -106,8 +105,8 @@ module.exports = {
 		const userById = interaction.guild.members.cache.get(interaction.user.id)
 
 		const filter = i => {
-			if (userById.roles.cache.has(bookClubRole.id) === false){
-				userById.roles.add(bookClubRole.id)
+			if (userById.roles.cache.has(bookClubRoleId) === false){
+				userById.roles.add(bookClubRoleId)
 				i.reply({content: `${i.user.username} has been added to the book club!`})
 			} else {
 				i.reply({content: `You are already added to the book club.`, ephemeral: true})
