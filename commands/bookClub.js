@@ -27,14 +27,13 @@ module.exports = {
 			.setRequired(true)),
 
 	async execute(interaction) {
-		// Get the string option
 		const book = interaction.options.getString('book');
 		const bookClub = book + ' Book Club ' + moment().format('MMMM Do YYYY')
 
 		const numOfPeople = interaction.options.getInteger('people')
 
-		const hours = interaction.options.getInteger('people')
-		const waitTimeInSeconds = hours * 60 * 60 
+		const hours = interaction.options.getInteger('hours')
+		const waitTimeInSeconds = (hours * 60) * 60 
 		const today = new Date()
 		const todayUNIX = Math.floor(today.getTime() / 1000)
 		const timeExpiresAt = todayUNIX + waitTimeInSeconds
@@ -56,7 +55,7 @@ module.exports = {
 					value: `https://en.wikipedia.org/wiki/${wikiLink}`
 				},
 				{
-					name: `Times out in ${hours} hours.`,
+					name: `Submissions close at <t:${timeExpiresAt}:f>`,
 					value: `Time runs out in: <t:${timeExpiresAt}:R>`
 				}
 			]
@@ -72,13 +71,12 @@ module.exports = {
 
 		await interaction.channel.send({ embeds: [embedMessage], components: [customButton]})
 
-		interaction.guild.roles.create({ 
+		await interaction.guild.roles.create({ 
 			name: `${bookClub}`,
 			permissions: [
-				PermissionsBitField.Flags.SendMessages, 
 				PermissionsBitField.Flags.SendMessages
 			]
-		})		
+		})
 
 		const bookClubRoleId = await interaction.guild.roles.cache.find(r => r.name === bookClub).id
 
@@ -100,20 +98,18 @@ module.exports = {
 			]
 		})
 
-		const waitTimeInMilliseconds = waitTimeInSeconds * 1000
-
-		const userById = interaction.guild.members.cache.get(interaction.user.id)
+		const userById = await interaction.guild.members.cache.get(interaction.user.id)
 
 		const filter = i => {
 			if (userById.roles.cache.has(bookClubRoleId) === false){
-				userById.roles.add(bookClubRoleId)
+				interaction.member.roles.add(bookClubRoleId)
 				i.reply({content: `${i.user.username} has been added to the book club!`})
 			} else {
 				i.reply({content: `You are already added to the book club.`, ephemeral: true})
-				return
 			}
 		}
 
-		interaction.channel.createMessageComponentCollector({ filter, max: numOfPeople, time: waitTimeInMilliseconds})
+		const waitTimeInMilliseconds = waitTimeInSeconds * 1000
+		await interaction.channel.createMessageComponentCollector({ filter, max: numOfPeople, time: waitTimeInMilliseconds})
 	}
 };
