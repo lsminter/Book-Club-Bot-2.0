@@ -6,15 +6,13 @@ const {
 	PermissionsBitField,
 	ChannelType
 } = require('discord.js');
-const { titleCase } = require("text-case");
-const moment = require("moment")
 
 module.exports = {
 	data: new SlashCommandBuilder()
-  .setName('book-club')
+  .setName('bookclub')
 	.setDescription('Creates a new book club!')
-	.addStringOption(option =>
-		option.setName('book')
+	.addStringOption(op =>
+		op.setName('book')
 			.setDescription('The book the book club is on')
 			.setRequired(true))
 	.addIntegerOption(option =>
@@ -28,31 +26,23 @@ module.exports = {
 
 	async execute(interaction) {
 		const book = interaction.options.getString('book');
-		const bookClub = book + ' Book Club ' + moment().format('MMMM Do YYYY')
+		const bookClub = book + ' Book Club ' + new Date().toDateString()
 
 		const numOfPeople = interaction.options.getInteger('people')
 
 		const hours = interaction.options.getInteger('hours')
-		const waitTimeInSeconds = (hours * 60) * 60 
-		const today = new Date()
-		const todayUNIX = Math.floor(today.getTime() / 1000)
-		const timeExpiresAt = todayUNIX + waitTimeInSeconds
+		const waitTimeInSeconds = (hours * 60) * 60
+		const timeExpiresAt = Math.floor(new Date().getTime() / 1000) + waitTimeInSeconds
 
 		const author = interaction.member.user.username
 
-		const wikiLink = titleCase(book).replace(/\s+/g, '_');
-
 		const embedMessage = {
-			title: book,
+			title: bookClub,
 			description: `${author} is going to run a book club on the book ${book}.`,
 			fields: [
 				{
 					name: 'Amount of people wanted',
 					value: `${numOfPeople}`
-				},
-				{
-					name: 'Link on Wikipedia',
-					value: `https://en.wikipedia.org/wiki/${wikiLink}`
 				},
 				{
 					name: `Submissions close at <t:${timeExpiresAt}:f>`,
@@ -61,7 +51,7 @@ module.exports = {
 			]
 		}
 
-		const customButton = new ActionRowBuilder()
+		const row = new ActionRowBuilder()
 			.addComponents(
 				new ButtonBuilder()
 					.setCustomId('primary')
@@ -69,11 +59,12 @@ module.exports = {
 					.setEmoji('👍')
 			);
 
-		await interaction.channel.send({ embeds: [embedMessage], components: [customButton]})
+		const finishedEmbedMessage = await interaction.reply({ embeds: [embedMessage], components: [row]})
 
 		await interaction.guild.roles.create({ 
 			name: `${bookClub}`,
 			permissions: [
+				PermissionsBitField.Flags.ViewChannel,
 				PermissionsBitField.Flags.SendMessages
 			]
 		})
@@ -91,25 +82,41 @@ module.exports = {
 				{
 					id: bookClubRoleId,
 					allow:[
-						PermissionsBitField.Flags.ViewChannel, 
-						PermissionsBitField.Flags.SendMessages
+						PermissionsBitField.Flags.SendMessages,
+						PermissionsBitField.Flags.ViewChannel
 					]
 				}
 			]
 		})
 
-		const userById = await interaction.guild.members.cache.get(interaction.user.id)
+		const disabledButton = new ActionRowBuilder()
+			.addComponents(
+				new ButtonBuilder()
+					.setCustomId('primary')
+					.setStyle(ButtonStyle.Primary)
+					.setLabel('Submissions Closed')
+					.setDisabled(true)
+			);
 
 		const filter = i => {
-			if (userById.roles.cache.has(bookClubRoleId) === false){
-				interaction.member.roles.add(bookClubRoleId)
-				i.reply({content: `${i.user.username} has been added to the book club!`})
-			} else {
-				i.reply({content: `You are already added to the book club.`, ephemeral: true})
+			if (interaction.guild.members.cache.get(i.user.id).roles.cache.has(bookClubRoleId) === true) {
+				i.reply({content: `You've already been added to the book club.`, ephemeral: true})
 			}
-		}
+			return interaction.guild.members.cache.get(i.user.id).roles.cache.has(bookClubRoleId) === false
+		}		
 
 		const waitTimeInMilliseconds = waitTimeInSeconds * 1000
-		await interaction.channel.createMessageComponentCollector({ filter, max: numOfPeople, time: waitTimeInMilliseconds})
+
+		const collector = finishedEmbedMessage.createMessageComponentCollector({ filter, max: numOfPeople, time: waitTimeInMilliseconds})
+
+		collector.on('collect', i => {
+			const userById = interaction.guild.members.cache.get(i.user.id)
+			userById.roles.add(bookClubRoleId)
+			i.reply({content: `${i.user.username} has been added to the book club!`})
+		})
+
+		collector.on('end', c => {
+			interaction.editReply({embeds: [embedMessage], components: [disabledButton]})
+		})
 	}
 };

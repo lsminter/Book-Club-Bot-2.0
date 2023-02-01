@@ -2,17 +2,9 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 const { Client, GatewayIntentBits, Collection } = require('discord.js');
-const bookClub = require('./commands/bookClub');
 require('dotenv').config()
 
-const client = new Client({ 
-	intents: [
-		GatewayIntentBits.Guilds, 
-		GatewayIntentBits.GuildMessages, 
-		GatewayIntentBits.GuildMessageReactions,
-		GatewayIntentBits.DirectMessages,
-	], 
-	partials: ['CHANNEL'] });
+const client = new Client({ intents: [ GatewayIntentBits.Guilds ]});
 
 client.commands = new Collection();
 
